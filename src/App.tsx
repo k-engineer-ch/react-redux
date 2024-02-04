@@ -77,9 +77,14 @@ export function App() {
     })()
   }, [dispatch])
 
-  const [draggingCardID, setDraggingCardID] = useState<CardID | undefined>(
-    undefined,
-  )
+  const draggingCardID = useSelector(state => state.draggingCardID)
+  const setDraggingCardID = (cardID: CardID) =>
+    dispatch({
+      type: 'Card.StartDragging',
+      payload: {
+        cardID,
+      },
+    })
 
   const dropCardTo = (toID: CardID | ColumnID) => {
     const fromID = draggingCardID
@@ -88,27 +93,18 @@ export function App() {
       return
     }
 
-    setDraggingCardID(undefined)
-
     if (fromID === toID) {
       return
     }
 
     const patch = reorderPatch(cardsOrder, fromID, toID)
 
-    setData(
-      produce((draft: State) => {
-        draft.cardsOrder = {
-          ...draft.cardsOrder,
-          ...patch,
-        }
-
-        const unorderedCards = draft.columns?.flatMap(c => c.cards ?? []) ?? []
-        draft.columns?.forEach(column => {
-          column.cards = sortBy(unorderedCards, draft.cardsOrder, column.id)
-        })
-      }),
-    )
+    dispatch({
+      type: 'Card.Drop',
+      payload: {
+        toID,
+      },
+    })
 
     api('PATCH /v1/cardsOrder', patch)
   }
